@@ -16,36 +16,36 @@ env:
   GKE_NAMESPACE_SELLERS: ${{ secrets.GKE_NAMESPACE_SELLERS }}
 
 jobs:
-  setup-build-publis-deploy-prod:
+  configurarion:
     runs-on: self-hosted
     environment: production
     steps:
 
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Configurando Google Cloud
-        uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
-        with:
-          service_account_key: ${{ env.K3S_PROD_YML }}
-          project_id: ${{ env.GKE_PROJECT_PROD }}
-          export_default_credentials: true
-
-      - name: Autenticando no GKE
-        run: |
-          gcloud --quiet auth configure-docker
-
-      - name: Configurando credenciais do Cluster
-        uses: google-github-actions/get-gke-credentials@fb08709ba27618c31c09e014e1d8364b02e5042e
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER_NAME_PROD }}
-          location: ${{ env.GKE_REGION_PROD }}
-          credentials: ${{ env.K3S_PROD_YML }}
-
       - name: Teste compilação
         run: mvn clean install
 
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Configurando Google Cloud
+#        uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
+#        with:
+#          service_account_key: ${{ env.K3S_PROD_YML }}
+#          project_id: ${{ env.GKE_PROJECT_PROD }}
+#          export_default_credentials: true
+#
+#      - name: Autenticando no GKE
+#        run: |
+#          gcloud --quiet auth configure-docker
+#
+#      - name: Configurando credenciais do Cluster
+#        uses: google-github-actions/get-gke-credentials@fb08709ba27618c31c09e014e1d8364b02e5042e
+#        with:
+#          cluster_name: ${{ env.GKE_CLUSTER_NAME_PROD }}
+#          location: ${{ env.GKE_REGION_PROD }}
+#          credentials: ${{ env.K3S_PROD_YML }}
+#
 #      - name: Gerando imagem Docker e enviando para o Docker Registry
 #        run: mvn clean package -P default k8s:build k8s:push -Dmaven.test.skip=true -Dregistry.host=${{ env.REGISTRY_HOST }} -Dregistry.name=${{ env.REGISTRY_NAME }} -Dproject.id-gke=${{ env.PROJECT_JAVA_NAME }} -Dserver.config.branch=${{ env.SERVER_CONFIG_BRANCH_PROD }} -Dapi.key.secured=enabled -Ddeployment.replicas=${{ env.REPLICAS_QTD_PROD }} -q
 

@@ -14,4 +14,5 @@ Primeiro item é criar um projeto no GCP (alcateiadev)
 5. Instalar o Girhub Runner
    1. Na sua conta pessoal, ir em setting, Actions e Runner
    2. Seguir os passos para instalação
+6. Dar um push na branch master e verificar se o build roda normalmente
 
