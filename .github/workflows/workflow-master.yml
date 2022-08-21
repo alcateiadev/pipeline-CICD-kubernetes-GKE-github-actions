@@ -1,0 +1,58 @@
+name: Pipeline Produção
+
+on:
+  push:
+    branches:
+      - 'master'
+env:
+  PROJECT_JAVA_NAME: "gcp-curso"
+  REGISTRY_HOST: ${{ secrets.REGISTRY_HOST }}
+  REGISTRY_NAME: ${{ secrets.REGISTRY_NAME_PROD }}
+  REPLICAS_QTD_PROD: 1
+  K3S_PROD_YML: ${{ secrets.K3S_PROD_YML }}
+  GKE_PROJECT_PROD: ${{ secrets.GKE_PROJECT_PROD }}
+  GKE_CLUSTER_NAME_PROD: ${{ secrets.GKE_CLUSTER_NAME_PROD }}
+  GKE_REGION_PROD: ${{ secrets.GKE_REGION_PROD }}
+  GKE_NAMESPACE_SELLERS: ${{ secrets.GKE_NAMESPACE_SELLERS }}
+
+jobs:
+  setup-build-publis-deploy-prod:
+    runs-on: self-hosted
+    environment: production
+    steps:
+
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configurando Google Cloud
+        uses: google-github-actions/setup-gcloud@94337306dda8180d967a56932ceb4ddcf01edae7
+        with:
+          service_account_key: ${{ env.K3S_PROD_YML }}
+          project_id: ${{ env.GKE_PROJECT_PROD }}
+          export_default_credentials: true
+
+      - name: Autenticando no GKE
+        run: |
+          gcloud --quiet auth configure-docker
+
+      - name: Configurando credenciais do Cluster
+        uses: google-github-actions/get-gke-credentials@fb08709ba27618c31c09e014e1d8364b02e5042e
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER_NAME_PROD }}
+          location: ${{ env.GKE_REGION_PROD }}
+          credentials: ${{ env.K3S_PROD_YML }}
+
+      - name: Gerando imagem Docker e enviando para o Docker Registry
+        run: mvn clean package -P default k8s:build k8s:push -Dmaven.test.skip=true -Dregistry.host=${{ env.REGISTRY_HOST }} -Dregistry.name=${{ env.REGISTRY_NAME }} -Dproject.id-gke=${{ env.PROJECT_JAVA_NAME }} -Dserver.config.branch=${{ env.SERVER_CONFIG_BRANCH_PROD }} -Dapi.key.secured=enabled -Ddeployment.replicas=${{ env.REPLICAS_QTD_PROD }} -q
+
+      - name: Gerando configurações do Kubernetes
+        run: mvn clean package -P default k8s:resource k8s:helm -Dmaven.test.skip=true -Dregistry.host=${{ env.REGISTRY_HOST }} -Dregistry.name=${{ env.REGISTRY_NAME }} -Dproject.id-gke=${{ env.PROJECT_JAVA_NAME }} -Dserver.config.branch=${{ env.SERVER_CONFIG_BRANCH_PROD }} -Dapi.key.secured=enabled -Ddeployment.replicas=${{ env.REPLICAS_QTD_PROD }} -q
+
+#      - name: Config chart-releaser
+#        uses: helm/chart-releaser-action@v1.2.1
+#        env:
+#          CR_TOKEN: "${{ secrets.G_TOKEN }}"
+#
+#      - name: Atualizando Cluster
+#        run: helm upgrade --install ${{ env.PROJECT_JAVA_NAME }} --namespace ${{ env.GKE_NAMESPACE_SELLERS }} ./target/jkube/helm/${{ env.PROJECT_JAVA_NAME }}/kubernetes/

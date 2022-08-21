@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ${spring.application.name}
+  name: ${spring.application.name}
+spec:
+  replicas: ${deployment.replicas}
+  selector:
+    matchLabels:
+      app: ${spring.application.name}
+  template:
+    metadata:
+      labels:
+        app: ${spring.application.name}
+        api-key-secured: ${api.key.secured}
+      annotations:
+        timestamp: ${timestamp}
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: ${spring.application.name}
+          image: "${registry.host}/${registry.name}/${project.artifactId}-${git.commit.id.describe-short}"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: ${spring.application.port}
+            initialDelaySeconds: 120
+            timeoutSeconds: 15
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: ${spring.application.port}
+            initialDelaySeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 6
+          env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: JAVA_OPTIONS
+              value: "  -Djava.security.egd=file:/dev/./urandom "
+            - name: SPRING_APPLICATION_NAME
+              value: ${spring.application.name}
