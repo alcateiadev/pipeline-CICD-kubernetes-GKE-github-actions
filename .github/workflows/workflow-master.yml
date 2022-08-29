@@ -16,18 +16,17 @@ env:
   GKE_NAMESPACE_SELLERS: ${{ secrets.GKE_NAMESPACE_SELLERS }}
 
 jobs:
-  configurarion:
+  build:
     runs-on: self-hosted
     environment: production
     steps:
 
-      - name: Configure git to trust the workspace despite the different owner
-        run:
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
       - uses: actions/checkout@v2
         with:
          fetch-depth: 0
+
+      - name: Ajuste do GIT
+        run: git init
 
       - name: Teste compilação
         run: mvn clean install
